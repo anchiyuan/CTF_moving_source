@@ -7,7 +7,7 @@ addpath('wpe_v1.33')
 %% 讀 SorPos.mat 檔 (SorPos) %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 SorPosNum = 4;                                           % number of source positions
-Sor_spacing = 1;                                       % source spacing
+Sor_spacing = 0.3;                                       % source spacing
 reverberation_time = 0.6;                                % Reverberation time (s)
 points_rir = 12288;                                      % Number of rir points
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -4,7 +4,7 @@ close all;
 %% load data and set basic parameters %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 SorPosNum = 4;                                           % number of source positions
-Sor_spacing = 0.3;                                       % source spacing
+Sor_spacing = 1;                                       % source spacing
 reverberation_time = 0.6;                                % Reverberation time (s)
 points_rir = 12288;                                      % Number of rir points
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -128,25 +128,21 @@ for j = 1:SorPosNum
 
 end
 
-%% predict CTF with Kalman nonstationary filter (A) %%
+%% predict CTF with Kalman stationary filter (A) %%
 start_frame = L;
 end_frame = NumOfFrame;
 
-% Kalman nonstationary filter %
+% Kalman stationary filter %
 A = zeros(MicNum, L, frequency, SorPosNum);
 tic
 parfor i = 1:MicNum
-    for n =1:frequency
+    for n = 1:frequency
         weight = zeros(L, 1);
         P = 0.5*eye(L);    % error covariance matrix %
         K = zeros(L, 1);    % Kalman gain %
-        Q = 10^(-4)*eye(L);    % process noise covariance matrix %
         R = 10^(-3);    % measurement noise covariance matrix %
         for FrameNo = start_frame:end_frame
-            % time update %
-            P = P + Q;
-
-            % measurement update %
+            % no time update only have measurement update %
             K = P*flip(Y_DAS(n, FrameNo-L+1:FrameNo).')*inv(conj(flip(Y_DAS(n, FrameNo-L+1:FrameNo)))*P*flip(Y_DAS(n, FrameNo-L+1:FrameNo).') + R);
             weight = weight + K*(conj(Y_delay(n, FrameNo, i)) - conj(flip(Y_DAS(n, FrameNo-L+1:FrameNo)))*weight);
             P = P - K*conj(flip(Y_DAS(n, FrameNo-L+1:FrameNo)))*P;
@@ -201,7 +197,7 @@ for j = 1:SorPosNum
     ylabel('amplitude')
 
     % save fig %
-    fig_filename_str = ['fig\fig_nonstationary_', string(reverberation_time), 'x', string(points_rir), 'x', string(Sor_spacing), 'x', string(SorPosNum), 'x', string(Second), '.fig'];
+    fig_filename_str = ['fig\fig_stationary_', string(reverberation_time), 'x', string(points_rir), 'x', string(Sor_spacing), 'x', string(SorPosNum), 'x', string(Second), '.fig'];
     fig_filename = join(fig_filename_str, '');
     savefig(fig_filename)
 

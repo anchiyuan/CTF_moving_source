@@ -4,7 +4,7 @@ close all;
 %% load data and set basic parameters %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 SorPosNum = 4;                                           % number of source positions
-Sor_spacing = 0.7;                                       % source spacing
+Sor_spacing = 0.3;                                       % source spacing
 reverberation_time = 0.6;                                % Reverberation time (s)
 points_rir = 12288;                                      % Number of rir points
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -134,7 +134,6 @@ end_frame = NumOfFrame;
 
 % Kalman stationary filter %
 A = zeros(MicNum, L, frequency, SorPosNum);
-tic
 parfor i = 1:MicNum
     for n = 1:frequency
         weight = zeros(L, 1);
@@ -160,7 +159,6 @@ parfor i = 1:MicNum
     end
 
 end
-toc
 
 %% A 轉回時域 (A_tdomain) %%
 NRMSPM = zeros(SorPosNum, 1);
