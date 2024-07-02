@@ -6,10 +6,10 @@ addpath('wpe_v1.33')
 
 %% 讀 SorPos.mat 檔 (SorPos) %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-SorPosNum = 4;                                           % number of source positions
-Sor_spacing = 0.3;                                       % source spacing
-reverberation_time = 0.6;                                % Reverberation time (s)
-points_rir = 12288;                                      % Number of rir points
+SorPosNum = 3;                                           % number of source positions
+Sor_spacing = 0.1;                                       % source spacing
+reverberation_time = 0.4;                                % Reverberation time (s)
+points_rir = 8192;                                      % Number of rir points
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 SorPos_filename_str = ['h\SorPos_', string(reverberation_time), 'x', string(points_rir), 'x', string(Sor_spacing), 'x', string(SorPosNum), '.mat'];
@@ -44,7 +44,7 @@ source = source_transpose.';
 
 %% RIR mix source (y_delay and y_nodelay) %%
 % convolution source and RIR %
-MicNum = 30;
+MicNum = 38;
 as = zeros(MicNum, points_rir+SorLen-1, SorPosNum);
 for j = 1:SorPosNum 
     for i = 1:MicNum

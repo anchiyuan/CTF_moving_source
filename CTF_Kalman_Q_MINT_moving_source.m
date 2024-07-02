@@ -3,10 +3,11 @@ close all;
 
 %% load data and set basic parameters %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-SorPosNum = 4;                                           % number of source positions
-Sor_spacing = 0.3;                                       % source spacing
-reverberation_time = 0.6;                                % Reverberation time (s)
-points_rir = 12288;                                      % Number of rir points
+SorPosNum = 3;                                           % number of source positions
+Sor_spacing = 0.1;                                       % source spacing
+reverberation_time = 0.4;                                % Reverberation time (s)
+points_rir = 8192;                                      % Number of rir points
+look_mic = 38;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % load SorPos %
@@ -87,17 +88,25 @@ for j = 1:SorPosNum
 
 end
 
+frame_index(SorPosNum, 2) = NumOfFrame;
+
 %% DAS beamformer %%
-MicNum = 30;
+MicNum = 38;
 SorNum = 1;    % 與 SorPosNum 沒關係 為了 Y_DAS 而設的
 c = 343;
 
-% ULA %
-MicStart = [1, 1.5, 1];
+% distributed 8 mic %
+mic_x = [ 200 ; 300 ; 300 ; 200 ; 200 ; 300 ; 300 ; 200 ]./100;
+mic_y = [ 200 ; 200 ; 300 ; 300 ; 200 ; 200 ; 300 ; 300 ]./100;
+mic_z = [ 100 ; 100 ; 100 ; 100 ; 200 ; 200 ; 200 ; 200 ]./100;
+MicPos = [mic_x, mic_y, mic_z,];
+
+% ULA 30 mics %
+MicNum_TDOA = 8;  
+MicStart = [210, 200, 100]/100;
 spacing = 0.02;
-MicPos = zeros(MicNum, 3);
-for i = 1:MicNum
-    MicPos(i, :) = [MicStart(1, 1)+(i-1)*spacing MicStart(1, 2) MicStart(1, 3)];
+for i = MicNum_TDOA+1:MicNum
+    MicPos(i, :) = [MicStart(1, 1)+(i-(MicNum_TDOA+1))*spacing, MicStart(1, 2), MicStart(1, 3)];
 end
 
 Y_DAS = zeros(frequency, NumOfFrame);
@@ -164,10 +173,14 @@ parfor i = 1:MicNum
     end
 
 end
+
 toc
 
 %% A 轉回時域 (A_tdomain) %%
 NRMSPM = zeros(SorPosNum, 1);
+
+f1 = figure;
+f2 = figure;
 
 for j = 1:SorPosNum
     A_forplot = zeros(frequency, L, MicNum);
@@ -184,10 +197,12 @@ for j = 1:SorPosNum
     
     A_tdomain = A_tdomain.*ratio_A_tdomain;
 
-    look_mic = 10;
+    ATF = fft(h(:, :, j), points_rir, 2);
+    ATF_estimated = fft(A_tdomain, points_rir, 2);
+
     % 畫 A_tdomain time plot %
-    figure(1)
-    subplot(SorPosNum/2, 2, j);
+    figure(f1)
+    subplot(SorPosNum, 1, j);
     plot(h(look_mic, :, j), 'r');
     hold on
     plot(A_tdomain(look_mic, :), 'b');
@@ -200,16 +215,42 @@ for j = 1:SorPosNum
     xlabel('points')
     ylabel('amplitude')
 
-    % save fig %
-    fig_filename_str = ['fig\fig_nonstationary_', string(reverberation_time), 'x', string(points_rir), 'x', string(Sor_spacing), 'x', string(SorPosNum), 'x', string(Second), '.fig'];
-    fig_filename = join(fig_filename_str, '');
-    savefig(fig_filename)
+    figure(f2)
+    subplot(SorPosNum, 2, j*2-1);
+    semilogx(linspace(0, fs/2, points_rir/2+1), 20*log10(abs(ATF(look_mic, 1:points_rir/2+1))), 'r');
+    hold on
+    semilogx(linspace(0, fs/2, points_rir/2+1), 20*log10(abs(ATF_estimated(look_mic, 1:points_rir/2+1))), 'b');
+    hold off
+    xlim([200 8000])
+    legend('ground-truth ATF', 'estimated ATF')
+    xlabel('frequency (Hz)')
+    ylabel('dB')
+    title(['magnitude  position = ',num2str(j)])
+
+    subplot(SorPosNum, 2, j*2);
+    semilogx(linspace(0, fs/2, points_rir/2+1), unwrap(angle(ATF(look_mic, 1:points_rir/2+1))), 'r');
+    hold on
+    semilogx(linspace(0, fs/2, points_rir/2+1), unwrap(angle(ATF_estimated(look_mic, 1:points_rir/2+1))), 'b');
+    hold off
+    xlim([200 8000])
+    legend('ground-truth ATF', 'estimated ATF')
+    xlabel('frequency (Hz)')
+    ylabel('phase (radius)')
+    title(['phase  position = ',num2str(j)])
 
     % 算 NRMSPM %
     h_NRMSPM = reshape(h(:, :, j).', [MicNum*points_rir 1]);
     aa_NRMSPM = reshape(A_tdomain.', [MicNum*points_rir 1]);
     NRMSPM(j, :) = 20*log10(norm(h_NRMSPM-h_NRMSPM.'*aa_NRMSPM/(aa_NRMSPM.'*aa_NRMSPM)*aa_NRMSPM)/norm(h_NRMSPM));
-
 end
+
+% save fig %
+fig_filename_str = ['fig\RIR_nonstationary_', string(reverberation_time), 'x', string(points_rir), 'x', string(Sor_spacing), 'x', string(SorPosNum), 'x', string(Second), '.fig'];
+fig_filename = join(fig_filename_str, '');
+saveas(f1, fig_filename)
+
+fig_filename_str = ['fig\ATF_nonstationary_', string(reverberation_time), 'x', string(points_rir), 'x', string(Sor_spacing), 'x', string(SorPosNum), 'x', string(Second), '.fig'];
+fig_filename = join(fig_filename_str, '');
+saveas(f2, fig_filename)
 
 fprintf('done\n')

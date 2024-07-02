@@ -3,31 +3,25 @@ close all;
 
 %% RIR parameter %%
 SorNum = 1;                                              % source number
-MicNum_TDOA = 8;                                         % TDOA麥克風數量
-MicNum = 38;                                             % number of microphone
+MicNum = 30;                                             % number of microphone
 c = 343;                                                 % Sound velocity (m/s)
 fs = 16000;                                              % Sample frequency (samples/s)
 
-% distributed 8 mic %
-mic_x = [ 200 ; 300 ; 300 ; 200 ; 200 ; 300 ; 300 ; 200 ]./100;
-mic_y = [ 200 ; 200 ; 300 ; 300 ; 200 ; 200 ; 300 ; 300 ]./100;
-mic_z = [ 100 ; 100 ; 100 ; 100 ; 200 ; 200 ; 200 ; 200 ]./100;
-MicPos = [mic_x, mic_y, mic_z,];
-
-% ULA 30 mics %
-MicStart = [210, 200, 100]/100;
+% ULA %
+MicStart = [1, 1.5, 1];
 spacing = 0.02;
-for i = MicNum_TDOA+1:MicNum
-    MicPos(i, :) = [MicStart(1, 1)+(i-(MicNum_TDOA+1))*spacing, MicStart(1, 2), MicStart(1, 3)];
+MicPos = zeros(MicNum, 3);
+for i = 1:MicNum
+    MicPos(i, :) = [MicStart(1, 1) + (i-1)*spacing, MicStart(1, 2), MicStart(1, 3)];
 end
 
-SorPos = [210, 215, 110]/100;                            % source position (m)
-room_dim = [500, 600, 250]/100;                          % Room dimensions [x y z] (m)
+room_dim = [5, 6, 2.5];                                  % Room dimensions [x y z] (m)
+SorPos = [2, 2.6, 1];                                    % first source position
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-SorPosNum = 3;                                           % number of source positions
-Sor_spacing = 0.1;                                       % source spacing
-reverberation_time = 0.4;                                % Reverberation time (s)
-points_rir = 8192;                                      % Number of rir points
+SorPosNum = 4;                                           % number of source positions
+Sor_spacing = 0.3;                                       % source spacing
+reverberation_time = 0.6;                                % Reverberation time (s)
+points_rir = 12288;                                      % Number of rir points
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 mtype = 'omnidirectional';                               % Type of microphone
 order = -1;                                              % -1 equals maximum reflection order!

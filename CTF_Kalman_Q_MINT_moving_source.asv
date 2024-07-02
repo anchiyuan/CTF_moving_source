@@ -4,10 +4,9 @@ close all;
 %% load data and set basic parameters %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 SorPosNum = 3;                                           % number of source positions
-Sor_spacing = 0.1;                                       % source spacing
+Sor_spacing = 0.3;                                       % source spacing
 reverberation_time = 0.4;                                % Reverberation time (s)
 points_rir = 8192;                                      % Number of rir points
-look_mic = 38;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % load SorPos %
@@ -88,10 +87,8 @@ for j = 1:SorPosNum
 
 end
 
-frame_index(SorPosNum, 2) = NumOfFrame;
-
 %% DAS beamformer %%
-MicNum = 38;
+MicNum = 30;
 SorNum = 1;    % 與 SorPosNum 沒關係 為了 Y_DAS 而設的
 c = 343;
 
@@ -137,21 +134,25 @@ for j = 1:SorPosNum
 
 end
 
-%% predict CTF with Kalman stationary filter (A) %%
+%% predict CTF with Kalman nonstationary filter (A) %%
 start_frame = L;
 end_frame = NumOfFrame;
 
-% Kalman stationary filter %
+% Kalman nonstationary filter %
 A = zeros(MicNum, L, frequency, SorPosNum);
 tic
 parfor i = 1:MicNum
-    for n = 1:frequency
+    for n =1:frequency
         weight = zeros(L, 1);
         P = 0.5*eye(L);    % error covariance matrix %
         K = zeros(L, 1);    % Kalman gain %
+        Q = 10^(-4)*eye(L);    % process noise covariance matrix %
         R = 10^(-3);    % measurement noise covariance matrix %
         for FrameNo = start_frame:end_frame
-            % no time update only have measurement update %
+            % time update %
+            P = P + Q;
+
+            % measurement update %
             K = P*flip(Y_DAS(n, FrameNo-L+1:FrameNo).')*inv(conj(flip(Y_DAS(n, FrameNo-L+1:FrameNo)))*P*flip(Y_DAS(n, FrameNo-L+1:FrameNo).') + R);
             weight = weight + K*(conj(Y_delay(n, FrameNo, i)) - conj(flip(Y_DAS(n, FrameNo-L+1:FrameNo)))*weight);
             P = P - K*conj(flip(Y_DAS(n, FrameNo-L+1:FrameNo)))*P;
@@ -169,7 +170,6 @@ parfor i = 1:MicNum
     end
 
 end
-
 toc
 
 %% A 轉回時域 (A_tdomain) %%
@@ -196,6 +196,7 @@ for j = 1:SorPosNum
     ATF = fft(h(:, :, j), points_rir, 2);
     ATF_estimated = fft(A_tdomain, points_rir, 2);
 
+    look_mic = 38;
     % 畫 A_tdomain time plot %
     figure(f1)
     subplot(SorPosNum, 1, j);
@@ -234,19 +235,20 @@ for j = 1:SorPosNum
     ylabel('phase (radius)')
     title(['phase  position = ',num2str(j)])
 
+
+
     % 算 NRMSPM %
     h_NRMSPM = reshape(h(:, :, j).', [MicNum*points_rir 1]);
     aa_NRMSPM = reshape(A_tdomain.', [MicNum*points_rir 1]);
     NRMSPM(j, :) = 20*log10(norm(h_NRMSPM-h_NRMSPM.'*aa_NRMSPM/(aa_NRMSPM.'*aa_NRMSPM)*aa_NRMSPM)/norm(h_NRMSPM));
+
 end
 
 % save fig %
-fig_filename_str = ['fig\RIR_stationary_', string(reverberation_time), 'x', string(points_rir), 'x', string(Sor_spacing), 'x', string(SorPosNum), 'x', string(Second), '.fig'];
-fig_filename = join(fig_filename_str, '');
-saveas(f1, fig_filename)
 
-fig_filename_str = ['fig\ATF_stationary_', string(reverberation_time), 'x', string(points_rir), 'x', string(Sor_spacing), 'x', string(SorPosNum), 'x', string(Second), '.fig'];
+
+fig_filename_str = ['fig\fig_nonstationary_', string(reverberation_time), 'x', string(points_rir), 'x', string(Sor_spacing), 'x', string(SorPosNum), 'x', string(Second), '.fig'];
 fig_filename = join(fig_filename_str, '');
-saveas(f2, fig_filename)
+saveas(gcf,'Barchart.png')
 
 fprintf('done\n')
